@@ -11,11 +11,13 @@
 
 #define BUTT_PIN  12
 
+#define LED_PIN  13
+
 #define STEPS_PER_TURN 48
-#define MIN_X   0
-#define MAX_X 100 * STEPS_PER_TURN
-#define MIN_Y   0
-#define MAX_Y  50 * STEPS_PER_TURN
+#define MIN_X     0
+#define MAX_X  1200   // 100 * STEPS_PER_TURN
+#define MIN_Y     0
+#define MAX_Y  1200   //  50 * STEPS_PER_TURN
 
 
 // bit - pin variables
@@ -52,26 +54,42 @@ void set_motor_pins() {
 }
 
 void step_right(unsigned char *motor) {
-  *motor = *motor >> 1;
-  if(*motor & 0x0F == 0) {
-    *motor == 8;
+  *motor = ((*motor) >> 1);
+  if(((*motor) & 0x0F) == 0) {
+    *motor = 8;
   }
 }
 void step_left(unsigned char *motor) {
-  *motor = *motor << 1;
-  if(*motor & 0x0F == 0) {
-    *motor == 1;
+  *motor = ((*motor) << 1);
+  if(((*motor) & 0x0F) == 0) {
+    *motor = 1;
   }
 }
 
 void map_xy_to_lengths(int x, int y, int *ll, int *lr) {
-  long xx = x * x;
-  long yy = y * y;
-  
+  long xx = sq((long)x);
+  long yy = sq((long)y);
+/*
+  Serial.print("x,y= ");
+  Serial.print(x);
+  Serial.print(", ");
+  Serial.print(y);
+
+  Serial.print("  xx,yy= ");
+  Serial.print(xx);
+  Serial.print(", ");
+  Serial.print(yy);
+*/
   *ll = (int) sqrt(xx + yy);
-  xx = (MAX_X - x) * (MAX_X - x);
-  yy = (MAX_Y - y) * (MAX_Y - y);
+  xx = sq((long)((long)MAX_X - (long)x));
+  // yy = (MAX_Y - y) * (MAX_Y - y);  // just x is reversed on the right motor
   *lr = (int) sqrt(xx + yy);
+/*
+  Serial.print("  ll,lr= ");
+  Serial.print((int)*ll);
+  Serial.print(", ");
+  Serial.println((int)*lr);
+*/
 }
 
 
@@ -152,6 +170,8 @@ void setup() {
   pinMode(MR_PIN4, OUTPUT);
 
   pinMode(BUTT_PIN, INPUT);
+  
+  pinMode(LED_PIN, OUTPUT);
 
   digitalWrite(ML_PIN1, LOW);
   digitalWrite(ML_PIN2, LOW);
@@ -165,18 +185,32 @@ void setup() {
   // put your setup code here, to run once:
   map_xy_to_lengths(MAX_X / 2, MAX_Y, &tgt_ll, &tgt_lr);
   map_xy_to_lengths(MAX_X / 2, MAX_Y, &ll, &lr);
+
+  Serial.begin(9600);
+
+  delay(3000);
 }
 
 void loop() {
 
   static unsigned int ii = 1;
 
-  if(ii >= 5000) {
+  if(ii >= 500) {
     ii = 0;
     x = random(MIN_X, MAX_X);
     y = random(MIN_Y, MAX_Y);
     map_xy_to_lengths(x, y, &tgt_ll, &tgt_lr);
     set_target(tgt_ll, tgt_lr);
+    /*
+    Serial.print("targets: (");
+    Serial.print(x);
+    Serial.print(", ");
+    Serial.print(y);
+    Serial.print(") => ");
+    Serial.print(tgt_ll);
+    Serial.print(", ");
+    Serial.println(tgt_lr);
+    */
   }
 
   // if i == 0 do not do anything; just wait for reaching the target
@@ -186,19 +220,45 @@ void loop() {
   if( step_ahead() ) { // TRUE = target reached
     if(ii == 0)
       ii = 1; // bump it to make it counting
+    //Serial.print("step_ahead() == TRUE   ii == ");
+    //Serial.println(ii);
+  } else {
+    //Serial.print("step_ahead() == FALSE   ii == ");
+    //Serial.println(ii);
   }
 
-  if(val1 > ll)
+  if(val1 > ll || digitalRead(BUTT_PIN)) {
     step_right(&ml);
-  else if(val1 < ll)
+    ll = (int)val1;
+  }
+  else if(val1 < ll) {
     step_left(&ml);
+    ll = (int)val1;
+  }
 
-  if(val2 > lr)
+  if(val2 > lr) {
     step_right(&mr);
-  else if(val2 < mr)
+    lr = (int)val2;
+  }
+  else if(val2 < lr) {
     step_left(&mr);
-
+    lr = (int)val2;
+  }
+/*
+  Serial.print("val1,val2 = ");
+  Serial.print((int)val1);
+  Serial.print(", ");
+  Serial.println((int)val2);
+  Serial.print("    ll,lr = ");
+  Serial.print((int)ll);
+  Serial.print(", ");
+  Serial.println((int)lr);
+  Serial.print("    ml,mr = ");
+  Serial.print(ml);
+  Serial.print(", ");
+  Serial.println(mr);
+*/
   set_motor_pins();
 
-  delay(1);
+  delay(12);
 }
