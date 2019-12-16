@@ -9,7 +9,8 @@
 #define MR_PIN3  10
 #define MR_PIN4  11
 
-#define BUTT_PIN  12
+#define BUTTON_LEFT_PIN  12
+#define BUTTON_RIGHT_PIN  A0
 
 #define LED_PIN  13
 
@@ -171,7 +172,8 @@ void setup() {
   pinMode(MR_PIN3, OUTPUT);
   pinMode(MR_PIN4, OUTPUT);
 
-  pinMode(BUTT_PIN, INPUT);
+  pinMode(BUTTON_LEFT_PIN, INPUT);
+  pinMode(BUTTON_RIGHT_PIN, INPUT);
   
   pinMode(LED_PIN, OUTPUT);
 
@@ -229,11 +231,11 @@ void loop() {
     //Serial.println(ii);
   }
 
-  if(val1 > ll || digitalRead(BUTT_PIN)) {
+  if(val1 > ll || digitalRead(BUTTON_RIGHT_PIN)) {
     step_right(&ml);
     ll = (int)val1;
   }
-  else if(val1 < ll) {
+  else if(val1 < ll || digitalRead(BUTTON_LEFT_PIN)) {
     step_left(&ml);
     ll = (int)val1;
   }
