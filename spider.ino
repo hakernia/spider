@@ -32,16 +32,7 @@ int ll,       // length left
     tgt_lr;   // target length right
 
 void set_motor_pins() {
-  digitalWrite(ML_PIN1, LOW);
-  digitalWrite(ML_PIN2, LOW);
-  digitalWrite(ML_PIN3, LOW);
-  digitalWrite(ML_PIN4, LOW);
-  
-  digitalWrite(MR_PIN1, LOW);
-  digitalWrite(MR_PIN2, LOW);
-  digitalWrite(MR_PIN3, LOW);
-  digitalWrite(MR_PIN4, LOW);
-
+  // energize new pin first, not to leave unenergized pins any time
   if(ml & 1) digitalWrite(ML_PIN1, HIGH);
   if(ml & 2) digitalWrite(ML_PIN2, HIGH);
   if(ml & 4) digitalWrite(ML_PIN3, HIGH);
@@ -51,6 +42,17 @@ void set_motor_pins() {
   if(mr & 2) digitalWrite(MR_PIN2, HIGH);
   if(mr & 4) digitalWrite(MR_PIN3, HIGH);
   if(mr & 8) digitalWrite(MR_PIN4, HIGH);
+
+  // deenergize other pins
+  if(!(ml & 1)) digitalWrite(ML_PIN1, LOW);
+  if(!(ml & 2)) digitalWrite(ML_PIN2, LOW);
+  if(!(ml & 4)) digitalWrite(ML_PIN3, LOW);
+  if(!(ml & 8)) digitalWrite(ML_PIN4, LOW);
+  
+  if(!(ml & 1)) digitalWrite(MR_PIN1, LOW);
+  if(!(ml & 2)) digitalWrite(MR_PIN2, LOW);
+  if(!(ml & 4)) digitalWrite(MR_PIN3, LOW);
+  if(!(ml & 8)) digitalWrite(MR_PIN4, LOW);
 }
 
 void step_right(unsigned char *motor) {
