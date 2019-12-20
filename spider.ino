@@ -16,9 +16,9 @@
 
 #define STEPS_PER_TURN 48
 #define MIN_X     0
-#define MAX_X  1200   // 100 * STEPS_PER_TURN
+#define MAX_X  3800   // 100 * STEPS_PER_TURN
 #define MIN_Y     0
-#define MAX_Y  1200   //  50 * STEPS_PER_TURN
+#define MAX_Y  800   //  50 * STEPS_PER_TURN
 
 
 // bit - pin variables
@@ -50,10 +50,10 @@ void set_motor_pins() {
   if(!(ml & 4)) digitalWrite(ML_PIN3, LOW);
   if(!(ml & 8)) digitalWrite(ML_PIN4, LOW);
   
-  if(!(ml & 1)) digitalWrite(MR_PIN1, LOW);
-  if(!(ml & 2)) digitalWrite(MR_PIN2, LOW);
-  if(!(ml & 4)) digitalWrite(MR_PIN3, LOW);
-  if(!(ml & 8)) digitalWrite(MR_PIN4, LOW);
+  if(!(mr & 1)) digitalWrite(MR_PIN1, LOW);
+  if(!(mr & 2)) digitalWrite(MR_PIN2, LOW);
+  if(!(mr & 4)) digitalWrite(MR_PIN3, LOW);
+  if(!(mr & 8)) digitalWrite(MR_PIN4, LOW);
 }
 
 void step_right(unsigned char *motor) {
@@ -108,6 +108,15 @@ double dval2 = (double)val2;  // current value of Y in double and not int
 int caret_speed = 1;
 double dstep1 = caret_speed;  // initial value of step X
 double dstep2 = caret_speed;  // initial value of step Y
+
+void init_target_reached() {
+  dval1 = target_val1;
+  dval2 = target_val2;
+  val1 = dval1;
+  val2 = dval2;
+  dstep1 = 0;
+  dstep2 = 0;
+}
 
 void set_target(int trg1, int trg2) {
 
@@ -187,22 +196,46 @@ void setup() {
   digitalWrite(MR_PIN4, LOW);
   
   // put your setup code here, to run once:
-  map_xy_to_lengths(MAX_X / 2, MAX_Y, &tgt_ll, &tgt_lr);
-  map_xy_to_lengths(MAX_X / 2, MAX_Y, &ll, &lr);
+  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MIN_Y, &tgt_ll, &tgt_lr);
+  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MIN_Y, &ll, &lr);
+  set_target(tgt_ll, tgt_lr);
+  init_target_reached();
 
   Serial.begin(9600);
 
   delay(3000);
 }
 
+int targets_x[] = {MIN_X,
+                   MAX_X,
+                   MIN_X,
+                   MAX_X /2,
+                   MAX_X,
+                   MAX_X };
+int targets_y[] = {MAX_Y,
+                   MAX_Y,
+                   MIN_Y,
+                   MIN_Y,
+                   MIN_Y,
+                   MAX_Y };
+
 void loop() {
 
   static unsigned int ii = 1;
+  static unsigned char target_num = 0;
 
   if(ii >= 500) {
     ii = 0;
     x = random(MIN_X, MAX_X);
     y = random(MIN_Y, MAX_Y);
+
+    x = targets_x[target_num];
+    y = targets_y[target_num];
+    if(target_num < 5)
+        target_num++;
+    else
+        target_num = 0;
+        
     map_xy_to_lengths(x, y, &tgt_ll, &tgt_lr);
     set_target(tgt_ll, tgt_lr);
     /*
