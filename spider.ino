@@ -16,9 +16,9 @@
 
 #define STEPS_PER_TURN 48
 #define MIN_X     0
-#define MAX_X  3800   // 100 * STEPS_PER_TURN
+#define MAX_X  2000   // 100 * STEPS_PER_TURN
 #define MIN_Y     0
-#define MAX_Y  800   //  50 * STEPS_PER_TURN
+#define MAX_Y  740   //  50 * STEPS_PER_TURN
 
 
 // bit - pin variables
@@ -87,6 +87,9 @@ void map_xy_to_lengths(int x, int y, int *ll, int *lr) {
   xx = sq((long)((long)MAX_X - (long)x));
   // yy = (MAX_Y - y) * (MAX_Y - y);  // just x is reversed on the right motor
   *lr = (int) sqrt(xx + yy);
+
+//  *ll = *ll * log(*ll/100 + 0.5);
+//  *lr = *lr * log(*lr/100 + 0.5);
 /*
   Serial.print("  ll,lr= ");
   Serial.print((int)*ll);
@@ -196,8 +199,8 @@ void setup() {
   digitalWrite(MR_PIN4, LOW);
   
   // put your setup code here, to run once:
-  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MIN_Y, &tgt_ll, &tgt_lr);
-  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MIN_Y, &ll, &lr);
+  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MAX_Y, &tgt_ll, &tgt_lr);
+  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MAX_Y, &ll, &lr);
   set_target(tgt_ll, tgt_lr);
   init_target_reached();
 
@@ -264,21 +267,25 @@ void loop() {
     //Serial.println(ii);
   }
 
-  if(val1 > ll || digitalRead(BUTTON_RIGHT_PIN)) {
-    step_right(&ml);
-    ll = (int)val1;
-  }
-  else if(val1 < ll || digitalRead(BUTTON_LEFT_PIN)) {
+  if((val1 > ll) || digitalRead(BUTTON_LEFT_PIN)) {
+//    step_right(&ml);
     step_left(&ml);
     ll = (int)val1;
   }
+  else if(val1 < ll) {
+//    step_left(&ml);
+    step_right(&ml);
+    ll = (int)val1;
+  }
 
-  if(val2 > lr) {
-    step_right(&mr);
+  if((val2 > lr) || digitalRead(BUTTON_RIGHT_PIN)) {
+//    step_right(&mr);
+    step_left(&mr);
     lr = (int)val2;
   }
   else if(val2 < lr) {
-    step_left(&mr);
+//    step_left(&mr);
+    step_right(&mr);
     lr = (int)val2;
   }
 /*
