@@ -15,10 +15,10 @@
 #define LED_PIN  13
 
 #define STEPS_PER_TURN 48
-#define MIN_X     0
-#define MAX_X  2000   // 100 * STEPS_PER_TURN
+#define OFF_X   200
+#define MAX_X  3000   // 100 * STEPS_PER_TURN
 #define MIN_Y     0
-#define MAX_Y  740   //  50 * STEPS_PER_TURN
+#define MAX_Y  1100   //  50 * STEPS_PER_TURN
 
 
 // bit - pin variables
@@ -84,7 +84,7 @@ void map_xy_to_lengths(int x, int y, int *ll, int *lr) {
   Serial.print(yy);
 */
   *ll = (int) sqrt(xx + yy);
-  xx = sq((long)((long)MAX_X - (long)x));
+  xx = sq((long)((long)MAX_X+2*OFF_X - (long)x));
   // yy = (MAX_Y - y) * (MAX_Y - y);  // just x is reversed on the right motor
   *lr = (int) sqrt(xx + yy);
 
@@ -121,6 +121,10 @@ void init_target_reached() {
   dstep2 = 0;
 }
 
+/*
+ * Set target_val1, target_val2 and dstep1, dstep2
+ * The dsteps are then used by step_ahead() to reach target vals.
+ */
 void set_target(int trg1, int trg2) {
 
   target_val1 = trg1;
@@ -199,9 +203,10 @@ void setup() {
   digitalWrite(MR_PIN4, LOW);
   
   // put your setup code here, to run once:
-  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MAX_Y, &tgt_ll, &tgt_lr);
-  map_xy_to_lengths((MAX_X - MIN_X) / 2 + MIN_X, MAX_Y, &ll, &lr);
-  set_target(tgt_ll, tgt_lr);
+  set_target(MAX_X / 2 + OFF_X, MAX_Y);
+  map_xy_to_lengths(MAX_X / 2 + OFF_X, MAX_Y, &tgt_ll, &tgt_lr);
+  ll = tgt_ll;
+  lr = tgt_lr;
   init_target_reached();
 
   Serial.begin(9600);
@@ -209,13 +214,19 @@ void setup() {
   delay(3000);
 }
 
-int targets_x[] = {MIN_X,
+int targets_x[] = {OFF_X,
+                   OFF_X + MAX_X/2,
+                   OFF_X + MAX_X/2,
+                   OFF_X + MAX_X/2,
                    MAX_X,
-                   MIN_X,
-                   MAX_X /2,
+                   OFF_X,
+                   OFF_X + MAX_X/2,
                    MAX_X,
                    MAX_X };
 int targets_y[] = {MAX_Y,
+                   MAX_Y,
+                   MIN_Y,
+                   MAX_Y,
                    MAX_Y,
                    MIN_Y,
                    MIN_Y,
@@ -229,18 +240,19 @@ void loop() {
 
   if(ii >= 500) {
     ii = 0;
-    x = random(MIN_X, MAX_X);
+    x = OFF_X + random(MAX_X);
     y = random(MIN_Y, MAX_Y);
 
     x = targets_x[target_num];
     y = targets_y[target_num];
-    if(target_num < 5)
+    if(target_num < 8)
         target_num++;
     else
         target_num = 0;
         
-    map_xy_to_lengths(x, y, &tgt_ll, &tgt_lr);
-    set_target(tgt_ll, tgt_lr);
+    //map_xy_to_lengths(x, y, &tgt_ll, &tgt_lr);
+    //set_target(tgt_ll, tgt_lr);
+    set_target(x, y);
     /*
     Serial.print("targets: (");
     Serial.print(x);
@@ -265,8 +277,28 @@ void loop() {
   } else {
     //Serial.print("step_ahead() == FALSE   ii == ");
     //Serial.println(ii);
+    map_xy_to_lengths(val1, val2, &tgt_ll, &tgt_lr);
   }
 
+  if(ll < tgt_ll) {
+      step_left(&ml);
+      ll++;
+  } else 
+  if(ll > tgt_ll) {
+      step_right(&ml);
+      ll--;
+  }
+
+  if(lr < tgt_lr) {
+      step_left(&mr);
+      lr++;
+  } else
+  if(lr > tgt_lr) {
+      step_right(&mr);
+      lr--;
+  }
+
+/*
   if((val1 > ll) || digitalRead(BUTTON_LEFT_PIN)) {
 //    step_right(&ml);
     step_left(&ml);
@@ -288,6 +320,9 @@ void loop() {
     step_right(&mr);
     lr = (int)val2;
   }
+*/
+
+
 /*
   Serial.print("val1,val2 = ");
   Serial.print((int)val1);
